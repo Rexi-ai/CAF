@@ -40,19 +40,32 @@ async def baglanti(ws):
 
             async for mesaj in ws:
                 veri = json.loads(mesaj)
+                tur = veri.get("type")
 
-                if veri.get("type") == "get_status":
+                if tur == "get_status":
                     await ws.send(json.dumps({
                         "type": "status",
                         "request_id": veri.get("request_id"),
                         "pcs": list(pcs.keys())
                     }))
 
-                elif veri.get("type") == "photo_request":
+                elif tur == "photo_request":
                     hedef = veri.get("name")
                     hedef_ws = pcs.get(hedef)
 
-                 elif veri.get("type") == "site_request":
+                    if hedef_ws:
+                        await hedef_ws.send(json.dumps(veri))
+                        await ws.send(json.dumps({
+                            "type": "photo_sent",
+                            "name": hedef
+                        }))
+                    else:
+                        await ws.send(json.dumps({
+                            "type": "photo_error",
+                            "name": hedef
+                        }))
+
+                elif tur == "site_request":
                     hedef = veri.get("name")
                     hedef_ws = pcs.get(hedef)
 
