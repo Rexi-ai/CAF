@@ -1,3 +1,4 @@
+
 import asyncio
 import os
 import websockets
@@ -9,6 +10,7 @@ async def baglanti(websocket):
         async for mesaj in websocket:
             print("Gelen mesaj:", mesaj)
             await websocket.send("SUNUCU_OK")
+
     except websockets.ConnectionClosed:
         print("Bağlantı kesildi.")
 
