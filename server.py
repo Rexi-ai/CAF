@@ -19,71 +19,37 @@ async def bot_gonder(veri):
             bot_connection = None
 
 
-async def baglanti(ws):
-    global bot_connection
+@bot.command()
+async def mfoto(ctx, pc_adi: str):
+    if not ctx.message.attachments:
+        await ctx.send("Fotoğrafı komuta eklemelisin.")
+        return
 
-    rol = None
-    pc_adi = None
+    if not render_ready.is_set() or render_ws is None:
+        await ctx.send("Sunucu bağlantısı yok.")
+        return
 
-    try:
-        ilk_mesaj = json.loads(await ws.recv())
+    dosya = ctx.message.attachments[0]
 
-        if ilk_mesaj.get("key") != ACCESS_KEY:
-            await ws.close()
-            return
+    if not dosya.content_type or not dosya.content_type.startswith("image/"):
+        await ctx.send("Bu bir fotoğraf dosyası değil.")
+        return
 
-        rol = ilk_mesaj.get("role")
+    if pc_adi not in bagli_pc:
+        await ctx.send("Bu bilgisayar bağlı değil.")
+        return
 
-        if rol == "bot":
-            bot_connection = ws
-            await ws.send(json.dumps({"type": "connected"}))
+    fotograf = await dosya.read()
 
-            async for mesaj in ws:
-                veri = json.loads(mesaj)
+    await render_ws.send(json.dumps({
+        "type": "photo_request",
+        "name": pc_adi,
+        "filename": dosya.filename,
+        "image": fotograf.hex()
+    }))
 
-                if veri.get("type") == "get_status":
-                    await ws.send(json.dumps({
-                        "type": "status",
-                        "request_id": veri.get("request_id"),
-                        "pcs": list(pcs.keys())
-                    }))
-
-        elif rol == "pc":
-            pc_adi = ilk_mesaj.get("name")
-
-            if not pc_adi:
-                await ws.close()
-                return
-
-            pcs[pc_adi] = ws
-
-            await ws.send(json.dumps({"type": "registered"}))
-
-            await bot_gonder({
-                "type": "pc_online",
-                "name": pc_adi
-            })
-
-            await ws.wait_closed()
-
-    except websockets.ConnectionClosed:
-        pass
-    except Exception as e:
-        print("Hata:", e)
-
-    finally:
-        if rol == "pc" and pc_adi and pcs.get(pc_adi) == ws:
-            del pcs[pc_adi]
-
-            await bot_gonder({
-                "type": "pc_offline",
-                "name": pc_adi
-            })
-
-        if rol == "bot" and bot_connection == ws:
-            bot_connection = None
-
-
+    await ctx.send(f"📨 Fotoğraf isteği **{pc_adi}** bilgisayarına gönderildi.")
+    
 async def main():
     port = int(os.environ.get("PORT", 10000))
 
