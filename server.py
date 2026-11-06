@@ -3,7 +3,7 @@ import json
 import os
 import websockets
 
-ACCESS_KEY = os.environ["beGslQVbWstRx6iN"]
+ACCESS_KEY = os.environ["ACCESS_KEY"]
 
 pcs = {}
 bot_connection = None
