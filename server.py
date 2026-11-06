@@ -1,24 +1,44 @@
-
 import asyncio
 import os
+import json
 import websockets
 
-async def baglanti(websocket):
-    print("Yeni bilgisayar bağlandı!")
+clients = set()
+bot_connection = None
+
+async def baglanti(ws):
+    global bot_connection
 
     try:
-        async for mesaj in websocket:
-            print("Gelen mesaj:", mesaj)
-            await websocket.send("SUNUCU_OK")
+        async for mesaj in ws:
+            veri = json.loads(mesaj)
+
+            if veri.get("type") == "bot":
+                bot_connection = ws
+                await ws.send(json.dumps({
+                    "type": "connected"
+                }))
+
+            elif veri.get("type") == "pc":
+                for client in list(clients):
+                    if client == ws:
+                        continue
+
+                if bot_connection:
+                    await bot_connection.send(json.dumps(veri))
 
     except websockets.ConnectionClosed:
-        print("Bağlantı kesildi.")
+        pass
+    finally:
+        clients.discard(ws)
+        if bot_connection == ws:
+            bot_connection = None
 
 async def main():
     port = int(os.environ.get("PORT", 10000))
 
     async with websockets.serve(baglanti, "0.0.0.0", port):
-        print("WebSocket sunucusu aktif!")
+        print("Sunucu aktif!")
         await asyncio.Future()
 
 asyncio.run(main())
