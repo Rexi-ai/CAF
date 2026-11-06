@@ -52,15 +52,19 @@ async def baglanti(ws):
                     hedef = veri.get("name")
                     hedef_ws = pcs.get(hedef)
 
+                 elif veri.get("type") == "site_request":
+                    hedef = veri.get("name")
+                    hedef_ws = pcs.get(hedef)
+
                     if hedef_ws:
                         await hedef_ws.send(json.dumps(veri))
                         await ws.send(json.dumps({
-                            "type": "photo_sent",
+                            "type": "site_sent",
                             "name": hedef
                         }))
                     else:
                         await ws.send(json.dumps({
-                            "type": "photo_error",
+                            "type": "site_error",
                             "name": hedef
                         }))
 
