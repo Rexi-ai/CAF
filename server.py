@@ -122,6 +122,10 @@ async def baglanti(ws):
 
                 tur = veri.get("type")
 
+                if tur == "ping":
+                    await ws.send(json.dumps({"type": "pong"}))
+                    continue
+
                 if tur == "get_status":
                     await ws.send(json.dumps({
                         "type": "status",
@@ -150,7 +154,10 @@ async def baglanti(ws):
                     veri = json.loads(mesaj)
                 except Exception:
                     continue
-                if veri.get("type") == "reply":
+                tur = veri.get("type")
+                if tur == "ping":
+                    await ws.send(json.dumps({"type": "pong"}))
+                elif tur == "reply":
                     await cevabi_ilet(veri)
 
     except websockets.ConnectionClosed:
