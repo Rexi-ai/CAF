@@ -113,6 +113,8 @@ async def baglanti(ws):
         if rol == "bot":
             botlar.add(ws)
             await ws.send(json.dumps({"type": "connected"}))
+            for ad in list(pcs):
+                await ws.send(json.dumps({"type": "pc_online", "name": ad}))
 
             async for mesaj in ws:
                 try:
@@ -143,6 +145,10 @@ async def baglanti(ws):
 
             eski = pcs.get(pc_adi)
             if eski and eski is not ws:
+                try:
+                    await eski.send(json.dumps({"type": "kicked"}))
+                except Exception:
+                    pass
                 await eski.close()
 
             pcs[pc_adi] = ws
@@ -183,10 +189,9 @@ async def main():
     async with websockets.serve(
         baglanti, "0.0.0.0", port,
         ping_interval=10, ping_timeout=10,
-        max_size=12 * 1024 * 1024
+        max_size=24 * 1024 * 1024
     ):
         print("Sunucu aktif!")
         await asyncio.Future()
-
 
 asyncio.run(main())
